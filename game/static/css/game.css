@@ -1,0 +1,33 @@
+.game_menu {
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/image/menu/background.gif");
+    background-size: 100% 100%;
+    user-select: none; /* 关闭选中 */
+}
+
+.game_menu_field {
+    width: 20vw;
+    position: relative; /* 相对 */
+    top: 40vh; /* 距离窗口顶的40%高度 */
+    left: 19vw; /* 到左边窗口的19%宽度 */
+}
+
+.game_menu_field_item {
+    color: white;
+    height: 7vh;
+    width: 18vw;
+    font-size: 6vh; /* 字体大小 */
+    font-style: italic; /* 字体格式 */
+    padding: 2vh; /* 边窗宽度 */
+    text-align: center; /* 字体居中 */ 
+    background-color: rgba(39, 21, 28, 0.6);/* 背景颜色 */
+    border-radius: 10px; /* 框的圆度 */
+    cursor: pointer; /* 光标变换 */
+
+}
+
+.game_menu_field_item:hover {
+    transform: scale(1.2); /* 鼠标放上按钮后变成1.2倍 */
+    transition: 100ms; /* 设置响应时间 */
+}
