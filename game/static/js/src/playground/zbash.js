@@ -3,12 +3,13 @@ class GamePlayground {
         this.root = root;
         this.$playground = $(`
             <div>
-                游戏界面
+                game_playground
             </div>
         `);
-        this.hide();
+        //this.hide();
         this.root.$game.append(this.$playground);
-
+        this.width = this.$playground.width();
+        this.height = this.$playground.height();
         this.start();
     }
 

@@ -51,17 +51,78 @@ class GameMenu {
         this.$menu.hide();
     }
 
-}class GamePlayground {
+}let GAME_OBJECTS = [];
+
+class GameObject {
+    constructor() {
+        GAME_OBJECTS.push(this);
+
+        this.has_called_start = false; // 处理start函数只执行一次
+        this.timedelta = 0; // 当前帧距离上一帧的时间间隔
+    }
+
+    start() { // 只会在第一帧执行
+
+    }
+
+    update() { // 每一帧都执行
+
+    }
+
+    on_destory() { // 删除前执行
+
+    }
+
+    destory() { // 删除该物体
+        this.on_destory();
+
+        for(let i = 0; i < GAME_OBJECTS.length; i ++)
+        {
+            if (GAME_OBJECTS[i] === this) // 三等号 需类型和值同时相等
+            {
+                GAME_OBJECTS.splice(i, 1); // 删除函数
+                break;
+            }
+        }
+
+    } 
+}
+
+// 利用时间计算 避免不同网页帧数不同的情况
+let last_timestamp;
+let GAME_ANIMATION = function(timestamp) {
+
+    for(let i = 0; i < GAME_ANIMATION.length; i ++)
+    {
+        let obj = GAME_ANIMATION[i];
+        if(!obj.has_called_start)
+        {
+            obj.start();
+            obj.has_called_start = true;
+        }
+        else 
+        {
+            obj.timedelta = timestamp - last_timestamp;
+            obj.update();
+        }
+    }
+    last_timestamp = timestamp;
+
+    requestAnimationFrame(GAME_ANIMATION);
+}
+
+requestAnimationFrame(GAME_ANIMATION); // 帧数刷新class GamePlayground {
     constructor(root) {
         this.root = root;
         this.$playground = $(`
             <div>
-                游戏界面
+                game_playground
             </div>
         `);
-        this.hide();
+        //this.hide();
         this.root.$game.append(this.$playground);
-
+        this.width = this.$playground.width();
+        this.height = this.$playground.height();
         this.start();
     }
 
@@ -76,11 +137,11 @@ class GameMenu {
     hide() { // 关闭playground页面
         this.$playground.hide();
     }
-}class Game{
+}export class Game{
     constructor(id){
         this.id = id;
         this.$game = $('#' + id);
-        this.menu = new GameMenu(this);
+        //this.menu = new GameMenu(this);
         this.playground = new GamePlayground(this);
 
         this.start();
