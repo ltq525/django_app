@@ -20,7 +20,7 @@ class GameMenu {
             </div>
         `);
         this.root.$game.append(this.$menu);
-        //找class前用. 找id前用#
+        /* 找class前用. 找id前用# */
         this.$single = this.$menu.find('.single');
         this.$multi = this.$menu.find('.multi');
         this.$settings = this.$menu.find('.settings');
@@ -43,11 +43,11 @@ class GameMenu {
             console.log("3")
         });
     }
-    show() { // 显示menu页面
+    show() { /* 显示menu页面 */
         this.$menu.show();
     }   
 
-    hide() { // 关闭menu页面
+    hide() { /* 关闭menu页面 */
         this.$menu.hide();
     }
 

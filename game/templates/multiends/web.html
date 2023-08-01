@@ -5,7 +5,7 @@
     <script src="https://cdn.acwing.com/static/jquery/js/jquery-3.3.1.min.js"></script>
     <link rel="stylesheet" href="{% static 'css/game.css' %}">
     <!--
-        第17行代码替代
+        第17行代码替代 避免js文件的class命名冲突
         <script src="{% static 'js/dist/game.js' %}"></script>
     -->
     
@@ -14,8 +14,7 @@
 <body style="margin: 0">
     <div id="my_app"></div>
     <script type = "module">
-        <!--避免js文件的class命名冲突-->
-        import {Game} from "{% static 'css/game.css' %}";
+        import {Game} from "{% static 'js/dist/game.js' %}";
         $(document).ready(function(){
             let game = new Game("my_app");
         });

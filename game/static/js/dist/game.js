@@ -20,7 +20,7 @@ class GameMenu {
             </div>
         `);
         this.root.$game.append(this.$menu);
-        //找class前用. 找id前用#
+        /* 找class前用. 找id前用# */
         this.$single = this.$menu.find('.single');
         this.$multi = this.$menu.find('.multi');
         this.$settings = this.$menu.find('.settings');
@@ -43,44 +43,45 @@ class GameMenu {
             console.log("3")
         });
     }
-    show() { // 显示menu页面
+    show() { /* 显示menu页面 */
         this.$menu.show();
     }   
 
-    hide() { // 关闭menu页面
+    hide() { /* 关闭menu页面 */
         this.$menu.hide();
     }
 
-}let GAME_OBJECTS = [];
+}
+let GAME_OBJECTS = [];
 
 class GameObject {
     constructor() {
+        
+        this.has_called_start = false; /* 处理start函数只执行一次 */
         GAME_OBJECTS.push(this);
-
-        this.has_called_start = false; // 处理start函数只执行一次
-        this.timedelta = 0; // 当前帧距离上一帧的时间间隔
+        this.timedelta = 0; /* 当前帧距离上一帧的时间间隔 */
     }
 
-    start() { // 只会在第一帧执行
-
-    }
-
-    update() { // 每一帧都执行
+    start() { /* 只会在第一帧执行 */
 
     }
 
-    on_destory() { // 删除前执行
+    update() { /* 每一帧都执行 */
 
     }
 
-    destory() { // 删除该物体
+    on_destory() { /* 删除前执行 */
+
+    }
+
+    destory() { /* 删除该物体 */
         this.on_destory();
 
         for(let i = 0; i < GAME_OBJECTS.length; i ++)
         {
-            if (GAME_OBJECTS[i] === this) // 三等号 需类型和值同时相等
+            if (GAME_OBJECTS[i] === this) /* 三等号 需类型和值同时相等 */
             {
-                GAME_OBJECTS.splice(i, 1); // 删除函数
+                GAME_OBJECTS.splice(i, 1); /* 删除函数 */
                 break;
             }
         }
@@ -88,13 +89,13 @@ class GameObject {
     } 
 }
 
-// 利用时间计算 避免不同网页帧数不同的情况
+/* 利用时间计算 避免不同网页帧数不同的情况 */
 let last_timestamp;
 let GAME_ANIMATION = function(timestamp) {
 
-    for(let i = 0; i < GAME_ANIMATION.length; i ++)
+    for(let i = 0; i < GAME_OBJECTS.length; i ++)
     {
-        let obj = GAME_ANIMATION[i];
+        let obj = GAME_OBJECTS[i];
         if(!obj.has_called_start)
         {
             obj.start();
@@ -111,18 +112,71 @@ let GAME_ANIMATION = function(timestamp) {
     requestAnimationFrame(GAME_ANIMATION);
 }
 
-requestAnimationFrame(GAME_ANIMATION); // 帧数刷新class GamePlayground {
+requestAnimationFrame(GAME_ANIMATION); /* 帧数刷新60hz */
+class GameMap extends GameObject {
+    constructor(playground) {
+        super();
+        this.playground = playground;
+        this.$canvas = $(`<canvas></canvas>`); /* 画布 */
+        this.ctx = this.$canvas[0].getContext('2d');
+        this.ctx.canvas.width = this.playground.width;
+        this.ctx.canvas.height = this.playground.height;
+        this.playground.$playground.append(this.$canvas);
+    }
+
+    start() { 
+
+    }
+
+    update() { 
+        this.render();
+    }
+
+    render() {
+        this.ctx.fillStyle = "rgba(0, 0, 0)";
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+}
+class Player extends GameObject {
+    constructor(playground, x, y, radius, color, speed, is_me) {
+        super();
+        this.playground = playground;
+        this.ctx = this.playground.game_map.ctx;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color;
+        this.speed = speed;
+        this.is_me = is_me;
+        this.eps = 0.01; /* 精度 */
+    }
+
+    start() {
+
+    }
+
+    update() {
+        this.render();
+    }
+
+    render() {
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.fillStyle = this.color;
+        this.ctx.fill();
+    }
+}
+class GamePlayground {
     constructor(root) {
         this.root = root;
-        this.$playground = $(`
-            <div>
-                game_playground
-            </div>
-        `);
+        this.$playground = $(`<div class="game_playground"></div>`);
         //this.hide();
         this.root.$game.append(this.$playground);
         this.width = this.$playground.width();
         this.height = this.$playground.height();
+        this.game_map = new GameMap(this);
+        this.players = [];
+        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.15, true));
         this.start();
     }
 
@@ -130,22 +184,24 @@ requestAnimationFrame(GAME_ANIMATION); // 帧数刷新class GamePlayground {
 
     }
 
-    show() { // 显示playground页面
+    show() { /* 显示playground页面 */
         this.$playground.show();
     }   
 
-    hide() { // 关闭playground页面
+    hide() { /* 关闭playground页面 */
         this.$playground.hide();
     }
-}export class Game{
+}
+export class Game{
     constructor(id){
         this.id = id;
         this.$game = $('#' + id);
         //this.menu = new GameMenu(this);
         this.playground = new GamePlayground(this);
-
+        
         this.start();
     }
+    
     start() {
 
     }
