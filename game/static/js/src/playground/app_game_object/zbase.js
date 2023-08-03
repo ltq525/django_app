@@ -3,8 +3,8 @@ let GAME_OBJECTS = [];
 class GameObject {
     constructor() {
         
-        this.has_called_start = false; /* 处理start函数只执行一次 */
         GAME_OBJECTS.push(this);
+        this.has_called_start = false; /* 处理start函数只执行一次 */
         this.timedelta = 0; /* 当前帧距离上一帧的时间间隔 */
     }
 
@@ -16,12 +16,12 @@ class GameObject {
 
     }
 
-    on_destory() { /* 删除前执行 */
+    on_destroy() { /* 删除前执行 */
 
     }
 
-    destory() { /* 删除该物体 */
-        this.on_destory();
+    destroy() { /* 删除该物体 */
+        this.on_destroy();
 
         for(let i = 0; i < GAME_OBJECTS.length; i ++)
         {
@@ -59,3 +59,4 @@ let GAME_ANIMATION = function(timestamp) {
 }
 
 requestAnimationFrame(GAME_ANIMATION); /* 帧数刷新60hz */
+

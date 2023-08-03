@@ -57,8 +57,8 @@ let GAME_OBJECTS = [];
 class GameObject {
     constructor() {
         
-        this.has_called_start = false; /* 处理start函数只执行一次 */
         GAME_OBJECTS.push(this);
+        this.has_called_start = false; /* 处理start函数只执行一次 */
         this.timedelta = 0; /* 当前帧距离上一帧的时间间隔 */
     }
 
@@ -70,12 +70,12 @@ class GameObject {
 
     }
 
-    on_destory() { /* 删除前执行 */
+    on_destroy() { /* 删除前执行 */
 
     }
 
-    destory() { /* 删除该物体 */
-        this.on_destory();
+    destroy() { /* 删除该物体 */
+        this.on_destroy();
 
         for(let i = 0; i < GAME_OBJECTS.length; i ++)
         {
@@ -113,6 +113,7 @@ let GAME_ANIMATION = function(timestamp) {
 }
 
 requestAnimationFrame(GAME_ANIMATION); /* 帧数刷新60hz */
+
 class GameMap extends GameObject {
     constructor(playground) {
         super();
@@ -144,15 +145,20 @@ class Player extends GameObject {
         this.ctx = this.playground.game_map.ctx;
         this.x = x;
         this.y = y;
-        this.vx = 5;
-        this.vy = 5;
+
+        /* 速度矢量 */
+        this.vx = 0; 
+        this.vy = 0;
+
         this.move_length = 0;
+
         this.radius = radius;
         this.color = color;
         this.speed = speed;
         this.is_me = is_me;
-        this.eps = 0.1; /* 精度 */
+        this.eps = 0.01; /* 精度 */
 
+        this.cur_skill = null; /* 选择的技能 */
         
     }
 
@@ -164,15 +170,49 @@ class Player extends GameObject {
 
     add_listening_events() {
         let outer = this;
+        /* 取消鼠标右键菜单 */
         this.playground.game_map.$canvas.on("contextmenu", function() {
             return false;
-        }); /* 取消右键菜单 */
+        }); 
         this.playground.game_map.$canvas.mousedown(function(e) {
             /* 左键1 滚轮2 右键3 */
             if(e.which === 3) {
-                outer.move_to(e.clientX, e.clientY);
+                outer.move_to(e.clientX, e.clientY); /* 鼠标坐标的API */
+            }
+            else if(e.which === 1) {
+                if(outer.cur_skill === "fireball") {
+                    outer.shoot_fireball(e.clientX, e.clientY);
+                }
+                
+                outer.cur_skill = null; /* 释放后清空技能 */
             }
         });
+
+        $(window).keydown(function(e) {
+            /* 这里查询keycode码设置技能按键 */
+            if(e.which === 81) { /* q键 */
+                outer.cur_skill = "fireball";
+                return false;
+            }
+            
+        });
+
+    }
+
+    shoot_fireball(tx, ty) {
+
+        console.log(tx, ty);
+        let x = this.x, y = this.y;
+        let radius = this.playground.height * 0.01;
+        let angle = Math.atan2(ty - this.y, tx - this.x); /* 反正切函数获得偏移角度 */
+        let vx = Math.cos(angle), vy = Math.sin(angle);
+        
+        let color = "orange";
+        let speed = this.playground.height;
+
+        let move_length = this.playground.height * 1;
+        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length);
+        
     }
 
     get_dist(x1, y1, x2, y2) {
@@ -182,8 +222,10 @@ class Player extends GameObject {
     }
 
     move_to(tx, ty) {
-        this.move_length = this.get_dist(this.x, this.y, tx, ty);
-        let angle = Math.atan2(ty - this.y, tx - this.x);
+        console.log(tx, ty);
+        this.move_length = this.get_dist(this.x, this.y, tx, ty); /* 需要移动的距离 */
+        let angle = Math.atan2(ty - this.y, tx - this.x); /* 反正切函数获得偏移角度 */
+        
         this.vx = Math.cos(angle);
         this.vy = Math.sin(angle);
     }
@@ -204,11 +246,58 @@ class Player extends GameObject {
     }
 
     render() {
+
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.fillStyle = this.color;
+        this.ctx.fill();
+        
+    }
+}
+class FireBall extends GameObject {
+    constructor(playground, player, x, y, radius, vx, vy, color, speed, move_length) {
+        super();
+        this.playground = playground;
+        this.player = player;
+        this.ctx = this.playground.game_map.ctx;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.speed = speed;
+        this.move_length = move_length;
+        this.eps = 0.1;
+
+    }
+
+    start() {
+
+    }
+
+    update() {
+        if (this.move_length < this.eps) {
+            this.destroy();
+            return false;
+        }
+        else {
+            let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000); /* 速度*两帧间的时间=移动距离 timedalta单位为毫秒 */
+            this.x += this.vx * moved;
+            this.y += this.vy * moved;
+            this.move_length -= moved;
+        }
+        this.render();
+    }
+
+    render() {
+
         this.ctx.beginPath();
         this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }
+
 }
 class GamePlayground {
     constructor(root) {
@@ -220,7 +309,7 @@ class GamePlayground {
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
         this.players = [];
-        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.15, true));
+        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.5, true));
         this.start();
     }
 
