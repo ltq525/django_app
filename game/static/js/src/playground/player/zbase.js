@@ -24,6 +24,8 @@ class Player extends GameObject {
         this.speed = speed;
         this.is_me = is_me;
         this.eps = 0.1; /* 精度 */
+        this.spent_time = 0;
+
 
         this.cur_skill = null; /* 选择的技能 */
 
@@ -80,11 +82,10 @@ class Player extends GameObject {
         let vx = Math.cos(angle), vy = Math.sin(angle);
 
         let color = "orange";
-        let speed = this.playground.height;
+        let speed = this.playground.height * 0.8;
 
-        let move_length = this.playground.height * 1;
-        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01);
-
+        let move_length = this.playground.height * 2;
+        this.playground.skills.push(new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01));
     }
 
     get_dist(x1, y1, x2, y2) {
@@ -124,6 +125,16 @@ class Player extends GameObject {
     }
 
     update() {
+        this.spent_time += this.timedelta / 1000;
+        if(!this.is_me && this.spent_time > 3 && Math.random() < 1 / 180.0) {
+            let player = this.playground.players[0];
+
+            /* 火球攻击预判0.3秒后的位置 */
+            let tx = player.x + player.speed * this.vx * this.timedelta / 1000 * 0.3;
+            let ty = player.y + player.speed * this.vy * this.timedelta / 1000 * 0.3;
+
+            this.shoot_fireball(player.x, player.y);
+        }
 
         if (this.damage_speed > 50) {
             this.vx = this.vy = 0;

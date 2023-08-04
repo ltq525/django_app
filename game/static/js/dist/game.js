@@ -207,6 +207,8 @@ class Player extends GameObject {
         this.speed = speed;
         this.is_me = is_me;
         this.eps = 0.1; /* 精度 */
+        this.spent_time = 0;
+
 
         this.cur_skill = null; /* 选择的技能 */
 
@@ -263,11 +265,10 @@ class Player extends GameObject {
         let vx = Math.cos(angle), vy = Math.sin(angle);
 
         let color = "orange";
-        let speed = this.playground.height;
+        let speed = this.playground.height * 0.8;
 
-        let move_length = this.playground.height * 1;
-        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01);
-
+        let move_length = this.playground.height * 2;
+        this.playground.skills.push(new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01));
     }
 
     get_dist(x1, y1, x2, y2) {
@@ -307,6 +308,16 @@ class Player extends GameObject {
     }
 
     update() {
+        this.spent_time += this.timedelta / 1000;
+        if(!this.is_me && this.spent_time > 3 && Math.random() < 1 / 180.0) {
+            let player = this.playground.players[0];
+
+            /* 火球攻击预判0.3秒后的位置 */
+            let tx = player.x + player.speed * this.vx * this.timedelta / 1000 * 0.3;
+            let ty = player.y + player.speed * this.vy * this.timedelta / 1000 * 0.3;
+
+            this.shoot_fireball(player.x, player.y);
+        }
 
         if (this.damage_speed > 50) {
             this.vx = this.vy = 0;
@@ -396,9 +407,9 @@ class FireBall extends GameObject {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    is_collision(player) {
-        let distance = this.get_dist(this.x, this.y, player.x, player.y);
-        if(distance < this.radius + player.radius)
+    is_collision(obj) {
+        let distance = this.get_dist(this.x, this.y, obj.x, obj.y);
+        if(distance < this.radius + obj.radius)
             return true;
         return false;
     }   
@@ -428,9 +439,10 @@ class GamePlayground {
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
         this.players = [];
+        this.skills = [];
         this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.3, true));
         
-        for(let i = 0; i < 10; i ++) {
+        for(let i = 0; i < 8; i ++) {
             this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, this.get_random_color(), this.height * 0.15, false));
         }
         
@@ -447,7 +459,7 @@ class GamePlayground {
 
     }
 
-    show() { /* 显示playground页面 */qq
+    show() { /* 显示playground页面 */
         this.$playground.show();
     }   
 
