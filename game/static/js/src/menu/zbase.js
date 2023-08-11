@@ -19,6 +19,7 @@ class GameMenu {
                 </div>
             </div>
         `);
+        this.hide();
         this.root.$game.append(this.$menu);
         /* 找class前用. 找id前用# */
         this.$single = this.$menu.find('.single');

@@ -112,7 +112,7 @@ class Player extends GameObject {
             let angle = Math.PI * 2 * Math.random();
             let vx = Math.cos(angle), vy = Math.sin(angle);
             let color = this.color;
-            let speed = this.speed * 10;
+            let speed = this.speed * 5;
             let move_length = this.radius * Math.random() * 5;
             new Particle(this.playground, x, y, radius, vx, vy, color, speed, move_length);
         }
@@ -138,7 +138,7 @@ class Player extends GameObject {
             this.shoot_fireball(player.x, player.y);
         }
 
-        if (this.damage_speed > 50) {
+        if (this.damage_speed > 80) {
             this.vx = this.vy = 0;
             this.move_length = 0;
             let moved = this.damage_speed * this.timedelta / 1000; /* 计算每一帧移动的距离 */
