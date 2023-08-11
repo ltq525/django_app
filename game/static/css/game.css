@@ -9,8 +9,8 @@
 .game_menu_field {
     width: 20vw;
     position: relative; /* 相对 */
-    top: 40vh; /* 距离窗口顶的40%高度 */
-    left: 19vw; /* 到左边窗口的19%宽度 */
+    top: 40%; /* 距离窗口顶的40%高度 */
+    left: 60%; /* 到左边窗口的19%宽度 */
 }
 
 .game_menu_field_item {

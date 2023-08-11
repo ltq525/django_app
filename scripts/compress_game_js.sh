@@ -1,6 +1,6 @@
 #! /bin/bash
 
-JS_PATH=~/app/game/static/js/
+JS_PATH=~/django/app/game/static/js/
 JS_PATH_DIST=${JS_PATH}dist/
 JS_PATH_SRC=${JS_PATH}src/
 

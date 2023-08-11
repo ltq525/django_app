@@ -49,13 +49,15 @@ class Player extends GameObject {
             return false;
         });
         this.playground.game_map.$canvas.mousedown(function (e) {
+            const rect = outer.ctx.canvas.getBoundingClientRect();
+            if(!outer.playground.players[0].is_me)  return false;
             /* 左键1 滚轮2 右键3 */
             if (e.which === 3) {
-                outer.move_to(e.clientX, e.clientY); /* 鼠标坐标的API */
+                outer.move_to(e.clientX - rect.left, e.clientY - rect.top); /* 鼠标坐标的API */
             }
             else if (e.which === 1) {
                 if (outer.cur_skill === "fireball") {
-                    outer.shoot_fireball(e.clientX, e.clientY);
+                    outer.shoot_fireball(e.clientX - rect.left, e.clientY - rect.top);
                 }
 
                 outer.cur_skill = null; /* 释放后清空技能 */
@@ -84,8 +86,8 @@ class Player extends GameObject {
         let color = "orange";
         let speed = this.playground.height * 0.8;
 
-        let move_length = this.playground.height * 2;
-        this.playground.skills.push(new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01));
+        let move_length = Math.max(this.playground.width, this.playground.height);
+        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01);
     }
 
     get_dist(x1, y1, x2, y2) {
