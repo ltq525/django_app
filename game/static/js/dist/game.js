@@ -213,6 +213,11 @@ class Player extends GameObject {
 
         this.cur_skill = null; /* 选择的技能 */
 
+        if(this.is_me) {
+            this.img = new Image();
+            this.img.src = this.playground.root.settings.photo;
+        }
+
     }
 
     start() {
@@ -351,11 +356,23 @@ class Player extends GameObject {
     }
 
     render() {
-
-        this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        this.ctx.fillStyle = this.color;
-        this.ctx.fill();
+        /* 画图片 */
+        if(this.is_me) {
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.stroke();
+            this.ctx.clip();
+            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2); 
+            this.ctx.restore();
+        } 
+        /* 画颜色 */
+        else {
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.fillStyle = this.color;
+            this.ctx.fill();
+        }
     }
 
     on_destroy() {
@@ -487,7 +504,68 @@ class Settings {
         this.root = root;
         this.platform = "web";
         if(this.root.info) this.platform = "app";
-        
+        this.uername = "";
+        this.photo = "";
+
+        this.$settings = $(`
+            <div class = "game_settings"> 
+                <div class = "game_settings_login"> 
+                    <div class = "game_settings_title">
+                        登陆
+                    </div>
+
+                    <div class = "game_settings_username">
+                        <div class = "game_settings_item">
+                            <input type = "text" placeholder = "用户名">
+                        </div>
+                    </div>
+
+                    <div class = "game_settings_password">
+                        <div class = "game_settings_item">
+                            <input type = "password" placeholder = "密码">
+                        </div>
+                    </div>
+
+                    <div class = "game_settings_submit">
+                        <div class = "game_settings_item">
+                            <button>
+                                登陆
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class = "game_settings_error">
+
+                    </div>
+
+                    <div class = "game_settings_option">
+                        注册
+                    </div>
+                    <br>
+                    
+                    <div class = "game_settings_logo">
+                        <img width = "40" src = "http://localhost/static/image/settings/logo_Q.png">
+                        <br>
+                        <div>
+                            一键登录
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class = "game_settings_register"> 
+
+                </div>
+            </div>
+        `);
+
+        this.$login = this.$settings.find(".game_settings_login");
+        this.$login.hide();
+        this.$register = this.$settings.find(".game_settings_register");
+        this.$register.hide();
+
+        this.root.$game.append(this.$settings);
+
         this.start();
     }
 
@@ -496,11 +574,13 @@ class Settings {
     }
 
     register() {
-
+        this.$login.hide();
+        this.$register.show();
     }
 
     login() {
-
+        this.$register.hide();
+        this.$login.show();
     }
 
     getinfo() {
@@ -514,6 +594,8 @@ class Settings {
             success: function(resp) {
                 console.log(resp);
                 if (resp.result === "success") {
+                    outer.uername = resp.uername;
+                    outer.photo = resp.photo;
                     outer.hide();
                     outer.root.menu.show();
                 } 
@@ -525,11 +607,11 @@ class Settings {
     }
 
     hide() {
-
+        this.$settings.hide();
     }
 
     show() {
-
+        this.$settings.show();
     }
 }export class Game{
     constructor(id, info){

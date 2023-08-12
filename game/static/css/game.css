@@ -1,3 +1,123 @@
+.game_settings {
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/image/menu/background.gif");
+    background-size: 100% 100%;
+    user-select: none; /* 关闭选中功能 */
+}
+
+.game_settings_login {
+    height: 45vh;
+    width: 20vw;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+
+}
+
+.game_settings_title {
+    color: white;
+    font-size: 3vh;
+    text-align: center;
+    padding-top: 2vh;
+    margin-bottom: 2vh;
+}
+
+.game_settings_username {
+    display: block;
+    height: 7vh;
+}
+
+.game_settings_password {
+    display: block;
+    height: 7vh;
+
+}
+
+.game_settings_submit {
+    display: block;
+    height: 7vh;
+
+}
+
+.game_settings_item {
+    width: 100%;
+    height: 100%;
+}
+
+.game_settings_item > input {
+    width: 90%;
+    line-height: 3vh;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.game_settings_item > button {
+    color: white;
+    width: 90%;
+    line-height: 3vh;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgb(13, 129, 13);
+    border-radius: 5px;
+}
+
+.game_settings_error {
+    color: red;
+    font-size: 0.8vh;
+    display: inline; /* 压行不换行 */
+    float: left; /* 左对齐 */
+    padding-left: 1vw;
+}
+
+.game_settings_option {
+    color: white;
+    font-size: 2vh;
+    display: inline;
+    float: right;
+    padding-right: 1vw;
+    cursor: pointer;
+}
+
+.game_settings_logo {
+    display: block;
+    height: 7vh;
+}
+
+.game_settings_logo > img {
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    display: block;
+}
+
+.game_settings_logo > div {
+    color: white;
+    font-size: 1.5vh;
+    text-align: center;
+    display: block;
+}
+
+.game_settings_register {
+    height: 49vh;
+    width: 20vw;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7); 
+    border-radius: 5px;
+}
+
 .game_menu {
     width: 100%;
     height: 100%;
@@ -10,7 +130,7 @@
     width: 20vw;
     position: relative; /* 相对 */
     top: 40%; /* 距离窗口顶的40%高度 */
-    left: 60%; /* 到左边窗口的19%宽度 */
+    left: 60%; /* 到左边窗口的60%宽度 */
 }
 
 .game_menu_field_item {
@@ -23,7 +143,7 @@
     text-align: center; /* 字体居中 */ 
     background-color: rgba(39, 21, 28, 0.6);/* 背景颜色 */
     border-radius: 10px; /* 框的圆度 */
-    cursor: pointer; /* 光标变换 */
+    cursor: pointer; /* 光标变换成手 */
 
 }
 
