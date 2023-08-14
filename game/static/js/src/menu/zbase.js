@@ -14,7 +14,7 @@ class GameMenu {
                     </div>
                     <br>
                     <div class = "game_menu_field_item settings">
-                        设置
+                        退出
                     </div>
                 </div>
             </div>
@@ -42,6 +42,7 @@ class GameMenu {
         });
         this.$settings.click(function() {
             console.log("3")
+            outer.root.settings.logout_on_remote();
         });
     }
     show() { /* 显示menu页面 */
