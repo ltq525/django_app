@@ -82,7 +82,6 @@ class Player extends GameObject {
 
     shoot_fireball(tx, ty) {
 
-        //console.log(tx, ty);
         let x = this.x, y = this.y;
         let radius = this.playground.height * 0.01;
         let angle = Math.atan2(ty - this.y, tx - this.x); /* 反正切函数获得偏移角度 */
