@@ -267,7 +267,6 @@ class Player extends GameObject {
 
     shoot_fireball(tx, ty) {
 
-        //console.log(tx, ty);
         let x = this.x, y = this.y;
         let radius = this.playground.height * 0.01;
         let angle = Math.atan2(ty - this.y, tx - this.x); /* 反正切函数获得偏移角度 */
@@ -624,6 +623,8 @@ class Settings {
 
         this.$register.hide();
 
+        this.$acwing_login = this.$settings.find(".game_settings_logo img");
+
         this.root.$game.append(this.$settings);
 
         this.start();
@@ -635,8 +636,14 @@ class Settings {
     }
 
     add_listening_events() {
+        let outer = this;
+
         this.add_listening_events_login();
         this.add_listening_events_register();
+
+        this.$acwing_login.click(function() {
+            outer.acwing_login();
+        });
     }
 
     add_listening_events_login() {
@@ -662,6 +669,23 @@ class Settings {
         this.$register_login.click(function() {
             outer.login();
         });
+    }
+
+    acwing_login() {
+        console.log("click logo");
+        $.ajax({
+            url: "http://localhost/settings/acwing/web/apply_code/",
+            type: "GET",
+            success: function(resp) {
+                console.log(resp);
+                if (resp.result === "success") {
+                    window.location.replace(resp.apply_code_url) /* 页面重定向 */
+                }
+                else {
+                    outer.$login_error.html(resp.result);
+                }
+            }
+        })
     }
 
     login_on_remote() { /* 在远程服务器上登陆 */
