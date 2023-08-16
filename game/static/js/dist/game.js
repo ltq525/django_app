@@ -503,7 +503,7 @@ class Settings {
     constructor(root) {
         this.root = root;
         this.platform = "web";
-        if (this.root.info) this.platform = "app";
+        //if (this.root.info) this.platform = "app";
         this.uername = "";
         this.photo = "";
 
@@ -631,8 +631,13 @@ class Settings {
     }
 
     start() {
-        this.getinfo();
-        this.add_listening_events();
+        if(this.platform === "web") {
+            this.getinfo_web();
+            this.add_listening_events();
+        }
+        else {
+            this.getinfo_app();
+        }
     }
 
     add_listening_events() {
@@ -679,7 +684,7 @@ class Settings {
             success: function(resp) {
                 console.log(resp);
                 if (resp.result === "success") {
-                    window.location.replace(resp.apply_code_url) /* 页面重定向 */
+                    window.location.replace(resp.apply_code_url) /* 页面重定向跳转到该页面 */
                 }
                 else {
                     outer.$login_error.html(resp.result);
@@ -767,7 +772,29 @@ class Settings {
         this.$login.show();
     }
 
-    getinfo() {
+    getinfo_app() {
+        $.ajax({
+            url: "http://localhost/settings/getinfo/",
+            type: "GET",
+            data: {
+                platform: outer.platform,
+            },
+            success: function (resp) {
+                console.log(resp);
+                if (resp.result === "success") {
+                    outer.uername = resp.uername;
+                    outer.photo = resp.photo;
+                    outer.hide();
+                    outer.root.menu.show();
+                }
+                else {
+                    outer.login();
+                }
+            }
+        });
+    }
+
+    getinfo_web() {
         let outer = this;
         $.ajax({
             url: "http://localhost/settings/getinfo/",

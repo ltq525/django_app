@@ -2,7 +2,7 @@ class Settings {
     constructor(root) {
         this.root = root;
         this.platform = "web";
-        if (this.root.info) this.platform = "app";
+        //if (this.root.info) this.platform = "app";
         this.uername = "";
         this.photo = "";
 
@@ -122,7 +122,7 @@ class Settings {
 
         this.$register.hide();
 
-        this.$acwing_login = this.$settings.find(".game_settings_logo img");
+        this.$web_login = this.$settings.find(".game_settings_logo img");
 
         this.root.$game.append(this.$settings);
 
@@ -130,8 +130,13 @@ class Settings {
     }
 
     start() {
-        this.getinfo();
-        this.add_listening_events();
+        if (this.platform === "web") {
+            this.getinfo_web();
+            this.add_listening_events();
+        }
+        else {
+            this.getinfo_app();
+        }
     }
 
     add_listening_events() {
@@ -140,19 +145,19 @@ class Settings {
         this.add_listening_events_login();
         this.add_listening_events_register();
 
-        this.$acwing_login.click(function() {
-            outer.acwing_login();
+        this.$web_login.click(function () {
+            outer.web_login();
         });
     }
 
     add_listening_events_login() {
         let outer = this;
 
-        this.$login_submit.click(function() {
+        this.$login_submit.click(function () {
             outer.login_on_remote();
         });
 
-        this.$login_register.click(function() {
+        this.$login_register.click(function () {
             outer.register();
         });
 
@@ -161,24 +166,24 @@ class Settings {
     add_listening_events_register() {
         let outer = this;
 
-        this.$register_submit.click(function() {
+        this.$register_submit.click(function () {
             outer.register_on_remote();
         });
 
-        this.$register_login.click(function() {
+        this.$register_login.click(function () {
             outer.login();
         });
     }
 
-    acwing_login() {
+    web_login() {
         console.log("click logo");
         $.ajax({
             url: "http://localhost/settings/acwing/web/apply_code/",
             type: "GET",
-            success: function(resp) {
+            success: function (resp) {
                 console.log(resp);
                 if (resp.result === "success") {
-                    window.location.replace(resp.apply_code_url) /* 页面重定向 */
+                    window.location.replace(resp.apply_code_url) /* 页面重定向跳转到该页面 */
                 }
                 else {
                     outer.$login_error.html(resp.result);
@@ -266,7 +271,35 @@ class Settings {
         this.$login.show();
     }
 
-    getinfo() {
+    app_login(appid, redirect_uri, scope, state) {
+        let outer = this;
+        this.root.info.api.oauth2.authorize(appid, redirect_uri, scope, state, function (resp) {
+            if (resp.result === "success") {
+                outer.uername = resp.uername;
+                outer.photo = resp.photo;
+                outer.hide();
+                outer.root.menu.show();
+            }
+        });
+    }
+
+    getinfo_app() {
+        $.ajax({
+            url: "http://localhost/settings/getinfo/",
+            type: "GET",
+            success: function (resp) {
+                console.log(resp);
+                if (resp.result === "success") {
+                    outer.app_login(resp.appid, resp.redirect_uri, resp.scope, resp.state);
+                }
+                else {
+                    outer.login();
+                }
+            }
+        });
+    }
+
+    getinfo_web() {
         let outer = this;
         $.ajax({
             url: "http://localhost/settings/getinfo/",
