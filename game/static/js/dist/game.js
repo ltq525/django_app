@@ -272,7 +272,7 @@ class Player extends GameObject {
         let angle = Math.atan2(ty - this.y, tx - this.x); /* 反正切函数获得偏移角度 */
         let vx = Math.cos(angle), vy = Math.sin(angle);
 
-        let color = "orange";
+        let color = "LightBLue";
         let speed = this.playground.height * 0.8;
 
         let move_length = Math.max(this.playground.width, this.playground.height);
@@ -623,7 +623,7 @@ class Settings {
 
         this.$register.hide();
 
-        this.$acwing_login = this.$settings.find(".game_settings_logo img");
+        this.$web_login = this.$settings.find(".game_settings_logo img");
 
         this.root.$game.append(this.$settings);
 
@@ -631,7 +631,7 @@ class Settings {
     }
 
     start() {
-        if(this.platform === "web") {
+        if (this.platform === "web") {
             this.getinfo_web();
             this.add_listening_events();
         }
@@ -646,19 +646,19 @@ class Settings {
         this.add_listening_events_login();
         this.add_listening_events_register();
 
-        this.$acwing_login.click(function() {
-            outer.acwing_login();
+        this.$web_login.click(function () {
+            outer.web_login();
         });
     }
 
     add_listening_events_login() {
         let outer = this;
 
-        this.$login_submit.click(function() {
+        this.$login_submit.click(function () {
             outer.login_on_remote();
         });
 
-        this.$login_register.click(function() {
+        this.$login_register.click(function () {
             outer.register();
         });
 
@@ -667,21 +667,21 @@ class Settings {
     add_listening_events_register() {
         let outer = this;
 
-        this.$register_submit.click(function() {
+        this.$register_submit.click(function () {
             outer.register_on_remote();
         });
 
-        this.$register_login.click(function() {
+        this.$register_login.click(function () {
             outer.login();
         });
     }
 
-    acwing_login() {
+    web_login() {
         console.log("click logo");
         $.ajax({
             url: "http://localhost/settings/acwing/web/apply_code/",
             type: "GET",
-            success: function(resp) {
+            success: function (resp) {
                 console.log(resp);
                 if (resp.result === "success") {
                     window.location.replace(resp.apply_code_url) /* 页面重定向跳转到该页面 */
@@ -772,20 +772,26 @@ class Settings {
         this.$login.show();
     }
 
+    app_login(appid, redirect_uri, scope, state) {
+        let outer = this;
+        this.root.info.api.oauth2.authorize(appid, redirect_uri, scope, state, function (resp) {
+            if (resp.result === "success") {
+                outer.uername = resp.uername;
+                outer.photo = resp.photo;
+                outer.hide();
+                outer.root.menu.show();
+            }
+        });
+    }
+
     getinfo_app() {
         $.ajax({
             url: "http://localhost/settings/getinfo/",
             type: "GET",
-            data: {
-                platform: outer.platform,
-            },
             success: function (resp) {
                 console.log(resp);
                 if (resp.result === "success") {
-                    outer.uername = resp.uername;
-                    outer.photo = resp.photo;
-                    outer.hide();
-                    outer.root.menu.show();
+                    outer.app_login(resp.appid, resp.redirect_uri, resp.scope, resp.state);
                 }
                 else {
                     outer.login();

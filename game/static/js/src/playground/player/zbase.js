@@ -87,7 +87,7 @@ class Player extends GameObject {
         let angle = Math.atan2(ty - this.y, tx - this.x); /* 反正切函数获得偏移角度 */
         let vx = Math.cos(angle), vy = Math.sin(angle);
 
-        let color = "orange";
+        let color = "LightBLue";
         let speed = this.playground.height * 0.8;
 
         let move_length = Math.max(this.playground.width, this.playground.height);
