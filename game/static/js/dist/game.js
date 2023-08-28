@@ -782,6 +782,7 @@ class Settings {
     app_login(appid, redirect_uri, scope, state) {
         let outer = this;
         this.root.info.api.oauth2.authorize(appid, redirect_uri, scope, state, function (resp) {
+            console.log(resp);
             if (resp.result === "success") {
                 outer.uername = resp.uername;
                 outer.photo = resp.photo;
@@ -794,19 +795,12 @@ class Settings {
     getinfo_app() {
         let outer = this;
         $.ajax({
-            url: "https://app5806.acapp.acwing.com.cn/settings/getinfo/",
+            url: "https://app5806.acapp.acwing.com.cn/settings/acwing/app/apply_code/",
             type: "GET",
             success: function (resp) {
                 console.log(resp);
                 if (resp.result === "success") {
-                    //outer.app_login(resp.appid, resp.redirect_uri, resp.scope, resp.state);
-                    outer.uername = resp.uername;
-                    outer.photo = resp.photo;
-                    outer.hide();
-                    outer.root.menu.show();
-                }
-                else {
-                    outer.login();
+                    outer.app_login(resp.appid, resp.redirect_uri, resp.scope, resp.state);
                 }
             }
         });
@@ -846,6 +840,7 @@ class Settings {
     constructor(id, info){
         this.id = id;
         this.info = info;
+        console.log(info);
         this.$game = $('#' + id);
         this.settings = new Settings(this);
         this.menu = new GameMenu(this);
