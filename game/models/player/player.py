@@ -8,3 +8,7 @@ class Player(models.Model):
 
     def __str__(self):
         return str(self.user)
+
+# 修改后运行以下命令
+# python3 manage.py makemigrations
+# python3 manage.py migrate

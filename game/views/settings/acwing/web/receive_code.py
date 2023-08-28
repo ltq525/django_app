@@ -8,22 +8,27 @@ from random import randint
 
 def receive_code(request):
     data = request.GET
-    code = data.get("code")
-    state = data.get("state")
+    code = data.get('code')
+    state = data.get('state')
 
     if not cache.has_key(state):
         return redirect("index")
+    
+    # 使用后删除 state参数防止受攻击
     cache.delete(state)
 
-    #申请令牌
+    #申请令牌的地址
     apply_access_token_url = "https://www.acwing.com/third_party/api/oauth2/access_token/"
+    
+    #json字典写法
     params = {
         'appid': "5806",
-        'secret': "d76c5a9b41e9462bbb2547fc147a92b4",
+        'secret': "99d5d514d7774f809b2d6eb2a829c5ea",
         'code': code,
     }
 
-    access_token_res = request.get(apply_access_token_url, params = params).json()
+    # 使用requests.get申请令牌
+    access_token_res = requests.get(apply_access_token_url, params = params).json()
 
     access_token = access_token_res['access_token']
     openid = access_token_res['openid']
@@ -35,13 +40,13 @@ def receive_code(request):
 
     get_userinfo_url = "https://www.acwing.com/third_party/api/meta/identity/getinfo/"
     params = {
-        'appid': "5806",
-        'secret': "d76c5a9b41e9462bbb2547fc147a92b4",
-        'code': code,
+        "access_token": access_token,
+        "openid": openid
     }
-    userinfo_res = request.get(get_userinfo_url, params=params).json()
-    username = userinfo_res('username')
-    photo = userinfo_res('photo')
+    
+    userinfo_res = requests.get(get_userinfo_url, params=params).json()
+    username = userinfo_res['username']
+    photo = userinfo_res['photo']
 
     while User.objects.filter(username = username).exists(): # 当用户名冲突时 找到一个新用户名
         username += str(randint(0, 9))

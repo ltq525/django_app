@@ -52,7 +52,7 @@ def receive_code(request):
     get_userinfo_url = "https://www.acwing.com/third_party/api/meta/identity/getinfo/"
     params = {
         'appid': "5806",
-        'secret': "d76c5a9b41e9462bbb2547fc147a92b4",
+        'secret': "99d5d514d7774f809b2d6eb2a829c5ea",
         'code': code,
     }
     userinfo_res = request.get(get_userinfo_url, params=params).json()
