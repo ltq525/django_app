@@ -1,5 +1,5 @@
 class Player extends GameObject {
-    constructor(playground, x, y, radius, color, speed, is_me) {
+    constructor(playground, x, y, radius, color, speed, character, username, photo) {
         super();
         this.playground = playground;
         this.ctx = this.playground.game_map.ctx;
@@ -22,22 +22,24 @@ class Player extends GameObject {
         this.radius = radius;
         this.color = color;
         this.speed = speed;
-        this.is_me = is_me;
+        this.character = character;
+        this.username = username;
+        this.photo = photo;
         this.eps = 0.01; /* 精度 */
         this.spent_time = 0;
 
 
         this.cur_skill = null; /* 选择的技能 */
 
-        if (this.is_me) {
+        if (this.character !== "robot") {
             this.img = new Image();
-            this.img.src = this.playground.root.settings.photo;
+            this.img.src = this.photo;
         }
 
     }
 
     start() {
-        if (this.is_me) {
+        if (this.character === "me") {
             this.add_listening_events();
         }
         else {
@@ -56,7 +58,7 @@ class Player extends GameObject {
         this.playground.game_map.$canvas.mousedown(function (e) {
             let scale = outer.playground.scale;
             const rect = outer.ctx.canvas.getBoundingClientRect();
-            if (!outer.playground.players[0].is_me) return false;
+            if (outer.playground.players[0].character === "robot") return false;
             /* 左键1 滚轮2 右键3 */
             if (e.which === 3) {
                 outer.move_to((e.clientX - rect.left) / scale, (e.clientY - rect.top) / scale); /* 鼠标坐标的API */
@@ -145,7 +147,7 @@ class Player extends GameObject {
     update_move() {
         let scale = this.playground.scale;
         this.spent_time += this.timedelta / 1000;
-        if (!this.is_me && this.spent_time > 3 && Math.random() < 1 / 180.0) {
+        if (this.character === "robot" && this.spent_time > 3 && Math.random() < 1 / 180.0) {
             let player = this.playground.players[0];
 
             /* 火球攻击预判0.3秒后的位置 */
@@ -168,7 +170,7 @@ class Player extends GameObject {
             if (this.move_length < 0.00001) {
                 this.move_length = 0;
                 this.vx = this.vy = 0;
-                if (!this.is_me) {
+                if (this.character === "robot") {
                     let tx = Math.random() * this.playground.width / scale;
                     let ty = Math.random() * this.playground.height / scale;
                     this.move_to(tx, ty);
@@ -186,7 +188,7 @@ class Player extends GameObject {
     render() {
         let scale = this.playground.scale;
         /* 画图 */
-        if (this.is_me) {
+        if (this.character !== "robot") {
             this.ctx.save();
             this.ctx.beginPath();
             /* 画圆 */
