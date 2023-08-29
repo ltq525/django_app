@@ -23,13 +23,13 @@ class Player extends GameObject {
         this.color = color;
         this.speed = speed;
         this.is_me = is_me;
-        this.eps = 0.1; /* 精度 */
+        this.eps = 0.01; /* 精度 */
         this.spent_time = 0;
 
 
         this.cur_skill = null; /* 选择的技能 */
 
-        if(this.is_me) {
+        if (this.is_me) {
             this.img = new Image();
             this.img.src = this.playground.root.settings.photo;
         }
@@ -41,8 +41,8 @@ class Player extends GameObject {
             this.add_listening_events();
         }
         else {
-            let tx = Math.random() * this.playground.width;
-            let ty = Math.random() * this.playground.height;
+            let tx = Math.random() * this.playground.width / this.playground.scale;
+            let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty);
         }
     }
@@ -54,15 +54,16 @@ class Player extends GameObject {
             return false;
         });
         this.playground.game_map.$canvas.mousedown(function (e) {
+            let scale = outer.playground.scale;
             const rect = outer.ctx.canvas.getBoundingClientRect();
-            if(!outer.playground.players[0].is_me)  return false;
+            if (!outer.playground.players[0].is_me) return false;
             /* 左键1 滚轮2 右键3 */
             if (e.which === 3) {
-                outer.move_to(e.clientX - rect.left, e.clientY - rect.top); /* 鼠标坐标的API */
+                outer.move_to((e.clientX - rect.left) / scale, (e.clientY - rect.top) / scale); /* 鼠标坐标的API */
             }
             else if (e.which === 1) {
                 if (outer.cur_skill === "fireball") {
-                    outer.shoot_fireball(e.clientX - rect.left, e.clientY - rect.top);
+                    outer.shoot_fireball((e.clientX - rect.left) / scale, (e.clientY - rect.top) / scale);
                 }
 
                 outer.cur_skill = null; /* 释放后清空技能 */
@@ -81,17 +82,20 @@ class Player extends GameObject {
     }
 
     shoot_fireball(tx, ty) {
+        let scale = this.playground.scale;
 
         let x = this.x, y = this.y;
-        let radius = this.playground.height * 0.01;
+        let radius = this.playground.height * 0.01 / scale;
         let angle = Math.atan2(ty - this.y, tx - this.x); /* 反正切函数获得偏移角度 */
         let vx = Math.cos(angle), vy = Math.sin(angle);
 
         let color = "LightBLue";
-        let speed = this.playground.height * 0.8;
+        let speed = this.playground.height * 0.8 / scale;
 
-        let move_length = Math.max(this.playground.width, this.playground.height);
-        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01);
+        let move_length = Math.max(this.playground.width, this.playground.height) / scale;
+        let damage = this.playground.height * 0.01 / scale;
+
+        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, damage);
     }
 
     get_dist(x1, y1, x2, y2) {
@@ -101,7 +105,7 @@ class Player extends GameObject {
     }
 
     move_to(tx, ty) {
-        //console.log(tx, ty);
+
         this.move_length = this.get_dist(this.x, this.y, tx, ty); /* 需要移动的距离 */
         let angle = Math.atan2(ty - this.y, tx - this.x); /* 反正切函数获得偏移角度 */
 
@@ -110,6 +114,7 @@ class Player extends GameObject {
     }
 
     is_attacked(angle, damage) {
+        let scale = this.playground.scale;
         for (let i = 0; i < 20 + Math.random() * 5; i++) {
             let x = this.x, y = this.y;
             let radius = this.radius * Math.random() * 0.1;
@@ -120,8 +125,10 @@ class Player extends GameObject {
             let move_length = this.radius * Math.random() * 5;
             new Particle(this.playground, x, y, radius, vx, vy, color, speed, move_length);
         }
+        
         this.radius -= damage;
-        if (this.radius < 10) {
+        /* 打四下消失 */
+        if (this.radius < 0.02) {
             this.destroy();
             return false;
         }
@@ -131,8 +138,14 @@ class Player extends GameObject {
     }
 
     update() {
+        this.update_move();
+        this.render();
+    }
+
+    update_move() {
+        let scale = this.playground.scale;
         this.spent_time += this.timedelta / 1000;
-        if(!this.is_me && this.spent_time > 3 && Math.random() < 1 / 180.0) {
+        if (!this.is_me && this.spent_time > 3 && Math.random() < 1 / 180.0) {
             let player = this.playground.players[0];
 
             /* 火球攻击预判0.3秒后的位置 */
@@ -142,7 +155,7 @@ class Player extends GameObject {
             this.shoot_fireball(player.x, player.y);
         }
 
-        if (this.damage_speed > 80) {
+        if (this.damage_speed > 80 / scale) {
             this.vx = this.vy = 0;
             this.move_length = 0;
             let moved = this.damage_speed * this.timedelta / 1000; /* 计算每一帧移动的距离 */
@@ -151,12 +164,13 @@ class Player extends GameObject {
             this.damage_speed *= this.friction;
         }
         else {
-            if (this.move_length < this.eps) {
+            /* 移动距离的精准度 */
+            if (this.move_length < 0.00001) {
                 this.move_length = 0;
                 this.vx = this.vy = 0;
                 if (!this.is_me) {
-                    let tx = Math.random() * this.playground.width;
-                    let ty = Math.random() * this.playground.height;
+                    let tx = Math.random() * this.playground.width / scale;
+                    let ty = Math.random() * this.playground.height / scale;
                     this.move_to(tx, ty);
                 }
             }
@@ -167,32 +181,34 @@ class Player extends GameObject {
                 this.move_length -= moved;
             }
         }
-        this.render();
     }
 
     render() {
-        /* 画图片 */
-        if(this.is_me) {
+        let scale = this.playground.scale;
+        /* 画图 */
+        if (this.is_me) {
             this.ctx.save();
             this.ctx.beginPath();
-            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            /* 画圆 */
+            this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
             this.ctx.stroke();
             this.ctx.clip();
-            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2); 
+            /* 放图片 */
+            this.ctx.drawImage(this.img, (this.x - this.radius) * scale, (this.y - this.radius) * scale, this.radius * 2 * scale, this.radius * 2 * scale);
             this.ctx.restore();
-        } 
+        }
         /* 画颜色 */
         else {
             this.ctx.beginPath();
-            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
             this.ctx.fillStyle = this.color;
             this.ctx.fill();
         }
     }
 
     on_destroy() {
-        for(let i = 0; i < this.playground.players.length; i ++) {
-            if(this.playground.players[i] == this) {
+        for (let i = 0; i < this.playground.players.length; i++) {
+            if (this.playground.players[i] == this) {
                 this.playground.players.splice(i, 1);
                 break;
             }

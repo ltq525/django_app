@@ -156,4 +156,13 @@
     width: 100%;
     height: 100%;
     user-select: none; /* 关闭选中 */
+    background-color: pink;
+}
+
+.game_playground > canvas {
+    /* 画布居中 */
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
