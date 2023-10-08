@@ -3,9 +3,9 @@ class Settings {
         this.root = root;
         this.platform = "web";
         if (this.root.info) this.platform = "app";
-        this.uername = "";
+        this.username = "";
         this.photo = "";
-
+        
         this.$settings = $(`
             <div class = "game_settings"> 
                 <div class = "game_settings_login"> 
@@ -284,7 +284,7 @@ class Settings {
         this.root.info.api.oauth2.authorize(appid, redirect_uri, scope, state, function (resp) {
             console.log(resp);
             if (resp.result === "success") {
-                outer.uername = resp.uername;
+                outer.username = resp.username;
                 outer.photo = resp.photo;
                 outer.hide();
                 outer.root.menu.show();
@@ -317,7 +317,7 @@ class Settings {
             success: function (resp) {
                 console.log(resp);
                 if (resp.result === "success") {
-                    outer.uername = resp.uername;
+                    outer.username = resp.username;
                     outer.photo = resp.photo;
                     outer.hide();
                     outer.root.menu.show();

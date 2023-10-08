@@ -62,6 +62,16 @@ class GameObject {
         GAME_OBJECTS.push(this);
         this.has_called_start = false; /* 处理start函数只执行一次 */
         this.timedelta = 0; /* 当前帧距离上一帧的时间间隔 */
+        this.uuid = this.create_uuid();
+    }
+
+    create_uuid() {
+        let res = "";
+        for (let i = 0; i < 8; i ++) {
+            let x = parseInt(Math.floor(Math.random() * 10));
+            res += x;
+        }
+        return res;
     }
 
     start() { /* 只会在第一帧执行 */
@@ -147,31 +157,7 @@ class GameMap extends GameObject {
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 }
-class MultiPlayerSocket {
-    constructor(playground) {
-        this.playground = playground;
-
-        this.ws = new WebSocket("wss://app5806.acapp.acwing.com.cn/wss/multiplayer/");
-
-        this.start();
-    }
-
-    start() {
-
-    }
-
-    send_create_player() {
-
-        this.ws.send(JSON.stringify({
-            'message': "success",
-        }));
-
-    }
-
-    receive_create_player() {
-
-    }
-}class Particle extends GameObject {
+class Particle extends GameObject {
     constructor(playground, x, y, radius, vx, vy, color, speed, move_length) {
         super();
         this.playground = playground;
@@ -218,6 +204,7 @@ class MultiPlayerSocket {
 class Player extends GameObject {
     constructor(playground, x, y, radius, color, speed, character, username, photo) {
         super();
+        console.log(character, username, photo);
         this.playground = playground;
         this.ctx = this.playground.game_map.ctx;
         this.x = x;
@@ -259,7 +246,7 @@ class Player extends GameObject {
         if (this.character === "me") {
             this.add_listening_events();
         }
-        else {
+        else if (this.character === "robot") {
             let tx = Math.random() * this.playground.width / this.playground.scale;
             let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty);
@@ -509,6 +496,61 @@ class FireBall extends GameObject {
     }
 
 }
+class MultiPlayerSocket {
+    constructor(playground) {
+        this.playground = playground;
+
+        this.ws = new WebSocket("wss://app5806.acapp.acwing.com.cn/wss/multiplayer/");
+
+        this.start();
+    }
+
+    start() {
+        this.receive();
+    }
+
+    receive() {
+        let outer = this;
+        this.ws.onmessage = function(e) {
+            let data = JSON.parse(e.data);
+            let uuid = data.uuid;
+            if (uuid === outer.uuid) return false;
+
+            let event = data.event;
+            if (event === "create_player") {
+                outer.receive_create_player(uuid, data.username, data.photo);
+            }
+        };
+    }
+
+    send_create_player(username, photo) {
+        let outer = this;
+
+        this.ws.send(JSON.stringify({
+            'event': "create_player",
+            'uuid': outer.uuid,
+            'username': username,
+            'photo': photo,
+        }));
+
+    }
+
+    receive_create_player(uuid, username, photo) {
+        let player = new Player(
+            this.playground,
+            this.playground.width / 2 / this.playground.scale, 
+            this.playground.height / 2 / this.playground.scale, 
+            this.playground.height * 0.05 / this.playground.scale, 
+            this.playground.get_random_color(), 
+            this.playground.height * 0.3 / this.playground.scale, 
+            "enemy",
+            username,
+            photo,
+            );
+        player.uuid = uuid;
+        this.playground.players.push(player);
+    }
+}
 class GamePlayground {
     constructor(root) {
         this.root = root;
@@ -564,12 +606,11 @@ class GamePlayground {
         else if (mode === "multi mode") {
             
             this.mps = new MultiPlayerSocket(this);
-
+            this.mps.uuid = this.players[0].uuid;
             this.mps.ws.onopen = function() {
-                outer.mps.send_create_player();
+                outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
             };
         }
-
 
     }
 
@@ -582,9 +623,9 @@ class Settings {
         this.root = root;
         this.platform = "web";
         if (this.root.info) this.platform = "app";
-        this.uername = "";
+        this.username = "";
         this.photo = "";
-
+        
         this.$settings = $(`
             <div class = "game_settings"> 
                 <div class = "game_settings_login"> 
@@ -863,7 +904,7 @@ class Settings {
         this.root.info.api.oauth2.authorize(appid, redirect_uri, scope, state, function (resp) {
             console.log(resp);
             if (resp.result === "success") {
-                outer.uername = resp.uername;
+                outer.username = resp.username;
                 outer.photo = resp.photo;
                 outer.hide();
                 outer.root.menu.show();
@@ -896,7 +937,7 @@ class Settings {
             success: function (resp) {
                 console.log(resp);
                 if (resp.result === "success") {
-                    outer.uername = resp.uername;
+                    outer.username = resp.username;
                     outer.photo = resp.photo;
                     outer.hide();
                     outer.root.menu.show();
@@ -920,11 +961,11 @@ class Settings {
         this.id = id;
         this.info = info;
         console.log(info);
+        
         this.$game = $('#' + id);
         this.settings = new Settings(this);
         this.menu = new GameMenu(this);
         this.playground = new GamePlayground(this);
-        
         this.start();
     }
     
