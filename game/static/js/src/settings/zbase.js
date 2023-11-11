@@ -5,7 +5,7 @@ class Settings {
         if (this.root.info) this.platform = "app";
         this.username = "";
         this.photo = "";
-        
+
         this.$settings = $(`
             <div class = "game_settings"> 
                 <div class = "game_settings_login"> 
@@ -254,18 +254,21 @@ class Settings {
     }
 
     logout_on_remote() { /* 在远程服务器上退出 */
-        if (this.platform !== "web") return false;
-
-        $.ajax({
-            url: "https://app5806.acapp.acwing.com.cn/settings/logout/",
-            type: "GET",
-            success: function (resp) {
-                console.log(resp);
-                if (resp.result === "success") {
-                    location.reload();
+        if (this.platform !== "web") {
+            this.root.info.api.window.close();
+        }
+        else {
+            $.ajax({
+                url: "https://app5806.acapp.acwing.com.cn/settings/logout/",
+                type: "GET",
+                success: function (resp) {
+                    console.log(resp);
+                    if (resp.result === "success") {
+                        location.reload();
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
 

@@ -1,7 +1,6 @@
 class Player extends GameObject {
     constructor(playground, x, y, radius, color, speed, character, username, photo) {
         super();
-        console.log(character, username, photo);
         this.playground = playground;
         this.ctx = this.playground.game_map.ctx;
         this.x = x;
@@ -28,6 +27,7 @@ class Player extends GameObject {
         this.photo = photo;
         this.eps = 0.01; /* 精度 */
         this.spent_time = 0;
+        this.fireballs = [];
 
 
         this.cur_skill = null; /* 选择的技能 */
@@ -37,9 +37,28 @@ class Player extends GameObject {
             this.img.src = this.photo;
         }
 
+        if (this.character === "me") {
+            this.fireball_coldtime = 3;
+            this.fireball_img = new Image();
+            this.fireball_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_9340c86053-fireball.png"
+            
+            this.blink_coldtime = 3;
+            this.blink_img = new Image();
+            this.blink_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_daccabdc53-blink.png";
+        
+        }
+
     }
 
     start() {
+        this.playground.player_count++;
+        this.playground.notice_board.write("已就绪：" + this.playground.player_count + "人");
+
+        if (this.playground.player_count >= 2) {
+            this.playground.state = "fighting";
+            this.playground.notice_board.write("Fighting");
+        }
+
         if (this.character === "me") {
             this.add_listening_events();
         }
@@ -57,16 +76,37 @@ class Player extends GameObject {
             return false;
         });
         this.playground.game_map.$canvas.mousedown(function (e) {
+            if (outer.playground.state !== "fighting")
+                return false;
+
             let scale = outer.playground.scale;
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (outer.playground.players[0].character === "robot") return false;
             /* 左键1 滚轮2 右键3 */
             if (e.which === 3) {
-                outer.move_to((e.clientX - rect.left) / scale, (e.clientY - rect.top) / scale); /* 鼠标坐标的API */
+                let tx = (e.clientX - rect.left) / scale, ty = (e.clientY - rect.top) / scale;
+                outer.move_to(tx, ty); /* 鼠标坐标的API */
+                if (outer.playground.mode == "multi mode")
+                    outer.playground.mps.send_move_to(tx, ty);
             }
             else if (e.which === 1) {
+
+                let tx = (e.clientX - rect.left) / scale;
+                let ty = (e.clientY - rect.top) / scale;
                 if (outer.cur_skill === "fireball") {
-                    outer.shoot_fireball((e.clientX - rect.left) / scale, (e.clientY - rect.top) / scale);
+                    let fireball = outer.shoot_fireball(tx, ty);
+                    if (outer.playground.mode === "multi mode") {
+                        outer.playground.mps.send_shoot_fireball(tx, ty, fireball.uuid);
+                    }
+                }
+                else if (outer.cur_skill === "blink") {
+                    if (outer.blink_coldtime > outer.eps)
+                        return false;
+                    outer.blink(tx, ty);
+                    if (outer.playground.mode === "multi mode") {
+                        outer.playground.mps.send_blink(tx, ty);
+                    }
+                    
                 }
 
                 outer.cur_skill = null; /* 释放后清空技能 */
@@ -74,12 +114,26 @@ class Player extends GameObject {
         });
 
         $(window).keydown(function (e) {
+            /* 返回ture避免按键失效 */
+            if (outer.playground.state !== "fighting")
+                return true;
+
+
+
             /* 这里查询keycode码设置技能按键 */
             if (e.which === 81) { /* q键 */
+                if (outer.fireball_coldtime > outer.eps)
+                    return true;
                 outer.cur_skill = "fireball";
                 return false;
+            } 
+            else if (e.which === 70) { /* f键 */
+                if (outer.blink_coldtime > outer.eps)
+                    return true;
+                outer.cur_skill = "blink";
+                return false;
             }
-
+    
         });
 
     }
@@ -98,13 +152,38 @@ class Player extends GameObject {
         let move_length = Math.max(this.playground.width, this.playground.height) / scale;
         let damage = this.playground.height * 0.01 / scale;
 
-        new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, damage);
+        let fireball = new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, damage);
+        this.fireballs.push(fireball);
+
+        this.fireball_coldtime = 3;
+
+        return fireball;
     }
 
     get_dist(x1, y1, x2, y2) {
         let dx = x1 - x2;
         let dy = y1 - y2;
         return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    destroy_fireball(uuid) {
+        for (let i = 0; i < this.fireballs.length; i++) {
+            let fireball = this.fireballs[i];
+            if (fireball.uuid == uuid) {
+                fireball.destroy();
+                break;
+            }
+        }
+    }
+
+    blink(tx, ty) {
+        let d = this.get_dist(this.x, this.y, tx, ty);
+        d = Math.min(d, 0.8);
+        let angle = Math.atan2(ty - this.y, tx - this.x);
+        this.x += d * Math.cos(angle);
+        this.y += d * Math.sin(angle);
+        this.blink_coldtime = 3;
+        this.move_length = 0; /* 闪现后停止移动 */
     }
 
     move_to(tx, ty) {
@@ -128,7 +207,7 @@ class Player extends GameObject {
             let move_length = this.radius * Math.random() * 5;
             new Particle(this.playground, x, y, radius, vx, vy, color, speed, move_length);
         }
-        
+
         this.radius -= damage;
         /* 打四下消失 */
         if (this.radius < 0.02) {
@@ -140,14 +219,32 @@ class Player extends GameObject {
         this.damage_speed = damage * 100;
     }
 
+    receive_attack(x, y, angle, damage, ball_uuid, attacker) {
+        attacker.destroy_fireball(ball_uuid);
+        this.x = x;
+        this.y = y;
+        this.is_attacked(angle, damage);
+    }
+
     update() {
+        this.spent_time += this.timedelta / 1000;
+        if (this.character === "me" && this.playground.state === "fighting")
+            this.update_coldtime();
         this.update_move();
         this.render();
     }
 
+    update_coldtime() {
+        this.fireball_coldtime -= this.timedelta / 1000;
+        this.fireball_coldtime = Math.max(this.fireball_coldtime, 0);
+
+        this.blink_coldtime -= this.timedelta / 1000;
+        this.blink_coldtime = Math.max(this.blink_coldtime, 0);
+    }
+
     update_move() {
         let scale = this.playground.scale;
-        this.spent_time += this.timedelta / 1000;
+
         if (this.character === "robot" && this.spent_time > 3 && Math.random() < 1 / 180.0) {
             let player = this.playground.players[0];
 
@@ -207,16 +304,70 @@ class Player extends GameObject {
             this.ctx.fillStyle = this.color;
             this.ctx.fill();
         }
+
+        if (this.character === "me" && this.playground.state === "fighting")
+            this.render_skill_coldyime();
+    }
+
+    render_skill_coldyime() {
+        let scale = this.playground.scale;
+        let x = 1.5, y = 0.9, r = 0.04;
+
+        /* 火球 */
+        this.ctx.save();
+        this.ctx.beginPath();
+        /* 画圆 */
+        this.ctx.arc(x * scale, y * scale, r * scale, 0, Math.PI * 2, false);
+        this.ctx.stroke();
+        this.ctx.clip();
+        /* 放图片 */
+        this.ctx.drawImage(this.fireball_img, (x - r) * scale, (y - r) * scale, r * 2 * scale, r * 2 * scale);
+        this.ctx.restore();
+
+        if (this.fireball_coldtime > 0) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * scale, y * scale);
+            this.ctx.arc(x * scale, y * scale, r * scale, 0 - Math.PI / 2, Math.PI * 2 * (1 - this.fireball_coldtime / 3) - Math.PI / 2, true);
+            this.ctx.lineTo(x * scale, y * scale);
+            this.ctx.fillStyle = "rgba(0, 0, 255, 0.6)";
+            this.ctx.fill();
+        }
+
+        /* 闪现 */
+        x = 1.62, y = 0.9, r = 0.04;
+        this.ctx.save();
+        this.ctx.beginPath();
+        /* 画圆 */
+        this.ctx.arc(x * scale, y * scale, r * scale, 0, Math.PI * 2, false);
+        this.ctx.stroke();
+        this.ctx.clip();
+        /* 放图片 */
+        this.ctx.drawImage(this.blink_img, (x - r) * scale, (y - r) * scale, r * 2 * scale, r * 2 * scale);
+        this.ctx.restore();
+
+        if (this.blink_coldtime > 0) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * scale, y * scale);
+            this.ctx.arc(x * scale, y * scale, r * scale, 0 - Math.PI / 2, Math.PI * 2 * (1 - this.blink_coldtime / 3) - Math.PI / 2, true);
+            this.ctx.lineTo(x * scale, y * scale);
+            this.ctx.fillStyle = "rgba(0, 0, 255, 0.6)";
+            this.ctx.fill();
+        }
+
     }
 
     on_destroy() {
+        if(this.character === "me")
+        {
+            this.playground.state = "over";
+            this.playground.notice_board.write("over");
+        }
+
         for (let i = 0; i < this.playground.players.length; i++) {
             if (this.playground.players[i] == this) {
                 this.playground.players.splice(i, 1);
                 break;
             }
         }
-
-
     }
 }

@@ -41,6 +41,12 @@ class GamePlayground {
 
         this.resize();
         this.game_map = new GameMap(this);
+
+        this.mode = mode;
+        this.state = "waiting"; /* 状态机 waiting -> fighting -> over */
+        this.notice_board = new NoticeBoard(this);
+        this.player_count = 0;
+
         this.players = [];
         let scale = this.scale;
         this.players.push(new Player(this, this.width / 2 / scale, this.height / 2 / scale, this.height * 0.05 / scale, "white", this.height * 0.3 / scale, "me", this.root.settings.username, this.root.settings.photo));
@@ -51,9 +57,9 @@ class GamePlayground {
             }
         }
         else if (mode === "multi mode") {
-            
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
+            /* 向后端发送消息 */
             this.mps.ws.onopen = function() {
                 outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
             };

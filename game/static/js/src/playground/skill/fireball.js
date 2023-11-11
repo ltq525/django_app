@@ -27,19 +27,28 @@ class FireBall extends GameObject {
             return false;
         }
 
+        this.update_move();
+
+        if(this.player.character !== "enemy")
+            this.update_attack();
+
+        this.render();
+    }
+
+    update_move() {
         let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000); /* 速度*两帧间的时间=移动距离 timedalta单位为毫秒 */
         this.x += this.vx * moved;
         this.y += this.vy * moved;
         this.move_length -= moved;
+    }
 
-        for(let i = 0; i < this.playground.players.length; i ++) {
+    update_attack() {
+        for (let i = 0; i < this.playground.players.length; i++) {
             let player = this.playground.players[i];
             if (this.player !== player && this.is_collision(player)) {
                 this.attack(player);
             }
         }
-
-        this.render();
     }
 
     get_dist(x1, y1, x2, y2) {
@@ -48,16 +57,22 @@ class FireBall extends GameObject {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
+    /* 判断是否碰撞 */
     is_collision(obj) {
         let distance = this.get_dist(this.x, this.y, obj.x, obj.y);
-        if(distance < this.radius + obj.radius)
+        if (distance < this.radius + obj.radius)
             return true;
         return false;
-    }   
+    }
 
     attack(player) {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         player.is_attacked(angle, this.damage); /* 此处可用动能方程优化 */
+
+        if(this.playground.mode === "multi mode") {
+            this.playground.mps.send_attack(player.uuid, player.x, player.y, angle, this.damage, this.uuid);
+        }
+
         this.destroy();
 
     }
@@ -68,6 +83,16 @@ class FireBall extends GameObject {
         this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
+    }
+
+    on_destroy() {
+        let fireballs = this.player.fireballs;
+        for (let i = 0; i < fireballs.length; i++) {
+            if (fireballs[i] === this) {
+                fireballs.splice(i, 1);
+                break;
+            }
+        }
     }
 
 }
