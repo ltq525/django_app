@@ -26,6 +26,7 @@ class Player extends GameObject {
         this.username = username;
         this.photo = photo;
         this.eps = 0.01; /* 精度 */
+        this.default_cold = 0.001;
         this.spent_time = 0;
         this.fireballs = [];
 
@@ -38,7 +39,9 @@ class Player extends GameObject {
         }
 
         if (this.character === "me") {
-            this.fireball_coldtime = 3;
+
+            /* 火球冷却时间 */
+            this.fireball_coldtime = this.default_cold;
             this.fireball_img = new Image();
             this.fireball_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_9340c86053-fireball.png"
             
@@ -75,9 +78,11 @@ class Player extends GameObject {
         this.playground.game_map.$canvas.on("contextmenu", function () {
             return false;
         });
+
         this.playground.game_map.$canvas.mousedown(function (e) {
+
             if (outer.playground.state !== "fighting")
-                return false;
+                return true;
 
             let scale = outer.playground.scale;
             const rect = outer.ctx.canvas.getBoundingClientRect();
@@ -113,13 +118,25 @@ class Player extends GameObject {
             }
         });
 
-        $(window).keydown(function (e) {
+        this.playground.game_map.$canvas.keydown(function (e) {
+
+            if (e.which === 13) {
+                if(outer.playground.mode === "multi mode") {
+                    outer.playground.chat_field.show_input();
+                    return false;
+                }
+            }
+            else if (e.which === 27) {
+                if(outer.playground.mode === "multi mode") {
+                    outer.playground.chat_field.hide_input();
+                    return false;
+                }
+            }
+
             /* 返回ture避免按键失效 */
             if (outer.playground.state !== "fighting")
                 return true;
-
-
-
+            
             /* 这里查询keycode码设置技能按键 */
             if (e.which === 81) { /* q键 */
                 if (outer.fireball_coldtime > outer.eps)
@@ -155,7 +172,7 @@ class Player extends GameObject {
         let fireball = new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, damage);
         this.fireballs.push(fireball);
 
-        this.fireball_coldtime = 3;
+        this.fireball_coldtime = this.default_cold;
 
         return fireball;
     }

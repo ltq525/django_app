@@ -126,11 +126,93 @@ let GAME_ANIMATION = function(timestamp) {
 
 requestAnimationFrame(GAME_ANIMATION); /* 帧数刷新60hz */
 
-class GameMap extends GameObject {
+class ChatField {
+    constructor(playground) {
+        this.playground = playground;
+
+        this.$history = $(`<div class="game_chat_field_history">历史记录</div>`);
+        this.$input = $(`<input type="text" class="game_chat_field_input">`);
+
+        this.$history.hide();
+        this.$input.hide();
+
+        this.func_id = null;
+
+        this.playground.$playground.append(this.$history);
+        this.playground.$playground.append(this.$input);
+
+        this.start();
+
+    }
+
+    start() {
+        this.add_listening_events();
+    }
+
+    add_listening_events() {
+        let outer = this;
+
+        this.$input.keydown(function(e) {
+            if (e.which === 27) {
+                outer.hide_input();
+                return false;
+            } else if (e.which === 13) {
+                let username = outer.playground.root.settings.username;
+                let text = outer.$input.val();
+                
+                if (text) {
+                    outer.$input.val("");
+                    outer.add_message(username, text);
+                    outer.playground.mps.send_message(username, text);
+                }
+                return false;
+            }
+        });
+
+    }
+
+    render_message(message) {
+        return $(`<div>${message}</div>`)
+    }
+
+    add_message(username, text) {
+        this.show_history();
+        let message = `[${username}]${text}`;
+        this.$history.append(this.render_message(message));
+        this.$history.scrollTop(this.$history[0].scrollHeight);
+
+    }
+
+
+    show_history() {
+        let outer = this;
+
+        this.$history.fadeIn(); // 逐渐显示
+
+        if (this.func_id)   clearTimeout(this.func_id);
+
+        this.func_id = setTimeout(function() {
+            outer.$history.fadeOut();
+            outer.func_id = null;
+        }, 3000);
+    }
+
+    show_input() {
+        this.show_history();
+
+        this.$input.show();
+        this.$input.focus();
+    }
+
+    hide_input() {
+        this.$input.hide();
+        this.playground.game_map.$canvas.focus();
+    }
+}class GameMap extends GameObject {
     constructor(playground) {
         super();
         this.playground = playground;
-        this.$canvas = $(`<canvas></canvas>`); /* 画布 */
+        this.$canvas = $(`<canvas tabindex=0></canvas>`); /* 画布 */
         this.ctx = this.$canvas[0].getContext('2d');
         this.ctx.canvas.width = this.playground.width;
         this.ctx.canvas.height = this.playground.height;
@@ -138,7 +220,7 @@ class GameMap extends GameObject {
     }
 
     start() { 
-
+        this.$canvas.focus();
     }
 
     resize() {
@@ -258,6 +340,7 @@ class Player extends GameObject {
         this.username = username;
         this.photo = photo;
         this.eps = 0.01; /* 精度 */
+        this.default_cold = 0.001;
         this.spent_time = 0;
         this.fireballs = [];
 
@@ -270,7 +353,9 @@ class Player extends GameObject {
         }
 
         if (this.character === "me") {
-            this.fireball_coldtime = 3;
+
+            /* 火球冷却时间 */
+            this.fireball_coldtime = this.default_cold;
             this.fireball_img = new Image();
             this.fireball_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_9340c86053-fireball.png"
             
@@ -307,9 +392,11 @@ class Player extends GameObject {
         this.playground.game_map.$canvas.on("contextmenu", function () {
             return false;
         });
+
         this.playground.game_map.$canvas.mousedown(function (e) {
+
             if (outer.playground.state !== "fighting")
-                return false;
+                return true;
 
             let scale = outer.playground.scale;
             const rect = outer.ctx.canvas.getBoundingClientRect();
@@ -345,13 +432,25 @@ class Player extends GameObject {
             }
         });
 
-        $(window).keydown(function (e) {
+        this.playground.game_map.$canvas.keydown(function (e) {
+
+            if (e.which === 13) {
+                if(outer.playground.mode === "multi mode") {
+                    outer.playground.chat_field.show_input();
+                    return false;
+                }
+            }
+            else if (e.which === 27) {
+                if(outer.playground.mode === "multi mode") {
+                    outer.playground.chat_field.hide_input();
+                    return false;
+                }
+            }
+
             /* 返回ture避免按键失效 */
             if (outer.playground.state !== "fighting")
                 return true;
-
-
-
+            
             /* 这里查询keycode码设置技能按键 */
             if (e.which === 81) { /* q键 */
                 if (outer.fireball_coldtime > outer.eps)
@@ -387,7 +486,7 @@ class Player extends GameObject {
         let fireball = new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, damage);
         this.fireballs.push(fireball);
 
-        this.fireball_coldtime = 3;
+        this.fireball_coldtime = this.default_cold;
 
         return fireball;
     }
@@ -738,6 +837,9 @@ class MultiPlayerSocket {
             else if (event === "blink") {
                 outer.receive_blink(uuid, data.tx, data.ty);
             }
+            else if (event === "message") {
+                outer.receive_message(uuid, data.username, data.text);
+            }
         };
     }
 
@@ -860,6 +962,22 @@ class MultiPlayerSocket {
         }
     }
 
+    send_message(username, text) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "message",
+            'uuid': outer.uuid,
+            'username': username,
+            'text': text,
+        }));
+    }
+
+    receive_message(uuid, username, text) {
+
+        this.playground.chat_field.add_message(username, text);
+        
+    }
+
 }
 class GamePlayground {
     constructor(root) {
@@ -920,6 +1038,7 @@ class GamePlayground {
             }
         }
         else if (mode === "multi mode") {
+            this.chat_field = new ChatField(this);
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
             /* 向后端发送消息 */
