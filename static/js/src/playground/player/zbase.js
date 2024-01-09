@@ -257,6 +257,7 @@ class Player extends GameObject {
         if(this.playground.state == "fighting" && this.character === "me" && this.playground.players.length === 1) {
             this.playground.state = "over";
             this.playground.score_board.win();
+            this.playground.notice_board.write("Over");
         }
 
     }
@@ -388,6 +389,7 @@ class Player extends GameObject {
         {
             this.playground.state = "over";
             this.playground.score_board.lose();
+            this.playground.notice_board.write("Over");
         }
 
         for (let i = 0; i < this.playground.players.length; i++) {
