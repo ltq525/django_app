@@ -167,7 +167,7 @@ class Player extends GameObject {
         let speed = this.playground.height * 0.8 / scale;
 
         let move_length = Math.max(this.playground.width, this.playground.height) / scale;
-        let damage = this.playground.height * 0.01 / scale;
+        let damage = this.playground.height * 0.008 / scale;
 
         let fireball = new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, damage);
         this.fireballs.push(fireball);
@@ -245,10 +245,22 @@ class Player extends GameObject {
 
     update() {
         this.spent_time += this.timedelta / 1000;
+
+        this.update_win();
+
         if (this.character === "me" && this.playground.state === "fighting")
             this.update_coldtime();
         this.update_move();
         this.render();
+    }
+
+    update_win() {
+
+        if(this.playground.state == "fighting" && this.character === "me" && this.playground.players.length === 1) {
+            this.playground.state = "over";
+            this.playground.score_board.win();
+        }
+
     }
 
     update_coldtime() {
@@ -374,10 +386,10 @@ class Player extends GameObject {
     }
 
     on_destroy() {
-        if(this.character === "me")
+        if(this.character === "me" && this.playground.state === "fighting")
         {
             this.playground.state = "over";
-            this.playground.notice_board.write("over");
+            this.playground.score_board.lose();
         }
 
         for (let i = 0; i < this.playground.players.length; i++) {
