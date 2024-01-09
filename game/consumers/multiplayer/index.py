@@ -49,8 +49,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
     #             'photo': player['photo'],
     #         }))
 
-
-
     #     # 加入群连接
     #     await self.channel_layer.group_add(self.room_name, self.channel_name)
 

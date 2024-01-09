@@ -24,6 +24,7 @@ class NoticeBoard extends GameObject {
         this.ctx.font = "20px serif";
         this.ctx.fillStyle = "white";
         this.ctx.textAlign = "center";
+        
         this.ctx.fillText(this.text, this.playground.width / 2, 20);
     }
 

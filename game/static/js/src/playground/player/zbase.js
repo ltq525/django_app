@@ -50,14 +50,12 @@ class Player extends GameObject {
             this.blink_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_daccabdc53-blink.png";
         
         }
-
     }
 
     start() {
-        this.playground.player_count++;
-        this.playground.notice_board.write("已就绪：" + this.playground.player_count + "人");
-
-        if (this.playground.player_count >= 2) {
+        this.playground.player_count ++;
+        this.playground.notice_board.write("Waiting");
+        if (this.playground.player_count >= 3) {
             this.playground.state = "fighting";
             this.playground.notice_board.write("Fighting");
         }

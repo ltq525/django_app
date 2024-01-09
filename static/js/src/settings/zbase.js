@@ -301,7 +301,6 @@ class Settings {
             url: "https://app5806.acapp.acwing.com.cn/settings/acwing/app/apply_code/",
             type: "GET",
             success: function (resp) {
-                console.log(resp);
                 if (resp.result === "success") {
                     outer.app_login(resp.appid, resp.redirect_uri, resp.scope, resp.state);
                 }
@@ -318,7 +317,6 @@ class Settings {
                 platform: outer.platform,
             },
             success: function (resp) {
-                console.log(resp);
                 if (resp.result === "success") {
                     outer.username = resp.username;
                     outer.photo = resp.photo;
