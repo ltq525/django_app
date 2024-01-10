@@ -1,10 +1,13 @@
-from django.shortcuts import redirect
+from django.shortcuts import redirect, reverse
 from django.core.cache import cache
 import requests
 from django.contrib.auth.models import User
 from game.models.player.player import Player
-from django.contrib.auth import login
+# from django.contrib.auth import login
 from random import randint
+# 手动获取JWT
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 def receive_code(request):
     data = request.GET
@@ -36,8 +39,9 @@ def receive_code(request):
     # filter返回长度为1的列表 get找不到时异常 需要处理异常
     players = Player.objects.filter(openid = openid)
     if players.exists(): # 用户已存在 直接登陆
-        login(request, players[0].user)
-        return redirect("index")
+        # login(request, players[0].user)
+        refresh = RefreshToken.for_user(players[0].user)
+        return redirect(reverse("index") + "?access=%s&refresh=%s" % (str(refresh.access_token), str(refresh)))
 
     # 申请用户信息地址
     get_userinfo_url = "https://www.acwing.com/third_party/api/meta/identity/getinfo/"
@@ -58,6 +62,7 @@ def receive_code(request):
     user = User.objects.create(username = username)
     player = Player.objects.create(user = user, photo = photo, openid = openid)
 
-    login(request, user)
+    # 此处已改成JWT验证方式
+    # login(request, user)
 
-    return redirect("index")
+    return redirect(reverse("index") + "?access=%s&refresh=%s" % (str(refresh.access_token), str(refresh)))

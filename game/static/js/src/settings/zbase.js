@@ -131,12 +131,45 @@ class Settings {
 
     start() {
         if (this.platform === "web") {
-            this.getinfo_web();
+            if (this.root.access) {
+                this.getinfo_web();
+                this.refresh_jwt_token();
+            } else {
+                this.login();
+            }
             this.add_listening_events();
         }
         else if (this.platform === "app") {
             this.getinfo_app();
         }
+    }
+
+    // 刷新token， 重新获取access
+    refresh_jwt_token() {
+        setInterval(() => {
+            $.ajax({
+                url: "https://app5806.acapp.acwing.com.cn/settings/token/refresh/",
+                type: "post",
+                data: {
+                    refresh: this.root.refresh,
+                },
+                success: resp => {
+                    this.root.access = resp.access;
+                }
+            });
+        }, 1000 * 60 * 4.5);
+
+        setTimeout(() => {
+            $.ajax({
+                url: "https://app5806.acapp.acwing.com.cn/settings/ranklist/",
+                headers: {
+                    'Authorization': "Bearer " + this.root.access,
+                },
+                success: resp => {
+                    console.log(resp);
+                }
+            });
+        }, 2000);
     }
 
     add_listening_events() {
@@ -200,33 +233,32 @@ class Settings {
         })
     }
 
-    login_on_remote() { /* 在远程服务器上登陆 */
-        let outer = this;
-        let username = this.$login_username.val();
-        let password = this.$login_password.val();
+    login_on_remote(username, password) { /* 在远程服务器上登陆 */
+        username = username || this.$login_username.val();
+        password = password || this.$login_password.val();
         this.$login_error.empty();
 
         $.ajax({
-            url: "https://app5806.acapp.acwing.com.cn/settings/login/",
-            type: "GET",
+            url: "https://app5806.acapp.acwing.com.cn/settings/token/",
+            type: "POST",
             data: {
                 username: username,
                 password: password,
             },
-            success: function (resp) {
-                console.log(resp);
-                if (resp.result === "success") {
-                    location.reload(); /* 登陆成功直接刷新即可 */
-                }
-                else {
-                    outer.$login_error.html(resp.result);
-                }
+            success: resp => {
+                this.root.access = resp.access;
+                this.root.refresh = resp.refresh;
+                this.refresh_jwt_token();
+                this.getinfo_web();
+            },
+            error: () => {
+                this.$login_error.html("用户名或密码错误");
             }
         });
     }
 
     register_on_remote() { /* 在远程服务器上注册 */
-        let outer = this;
+
         let username = this.$register_username.val();
         let password = this.$register_password.val();
         let password_confirm = this.$register_password_confirm.val();
@@ -234,19 +266,19 @@ class Settings {
 
         $.ajax({
             url: "https://app5806.acapp.acwing.com.cn/settings/register/",
-            type: "GET",
+            type: "POST",
             data: {
-                username: username,
-                password: password,
-                password_confirm: password_confirm,
+                username,
+                password,
+                password_confirm,
             },
-            success: function (resp) {
+            success: resp => {
                 console.log(resp);
                 if (resp.result === "success") {
-                    location.reload(); /* 登陆成功直接刷新即可 */
+                    this.login_on_remote(username, password);
                 }
                 else {
-                    outer.$register_error.html(resp.result);
+                    this.$register_error.html(resp.result);
                 }
             }
         });
@@ -258,16 +290,9 @@ class Settings {
             this.root.info.api.window.close();
         }
         else {
-            $.ajax({
-                url: "https://app5806.acapp.acwing.com.cn/settings/logout/",
-                type: "GET",
-                success: function (resp) {
-                    console.log(resp);
-                    if (resp.result === "success") {
-                        location.reload();
-                    }
-                }
-            });
+            this.root.access = "";
+            this.root.refresh = "";
+            location.href = "/";
         }
     }
 
@@ -283,14 +308,17 @@ class Settings {
     }
 
     app_login(appid, redirect_uri, scope, state) {
-        let outer = this;
-        this.root.info.api.oauth2.authorize(appid, redirect_uri, scope, state, function (resp) {
+
+        this.root.info.api.oauth2.authorize(appid, redirect_uri, scope, state, resp => {
             console.log(resp);
             if (resp.result === "success") {
-                outer.username = resp.username;
-                outer.photo = resp.photo;
-                outer.hide();
-                outer.root.menu.show();
+                this.username = resp.username;
+                this.photo = resp.photo;
+                this.root.access = resp.access;
+                this.root.refresh = resp.refresh;
+                this.hide();
+                this.root.menu.show();
+                this.refresh_jwt_token();
             }
         });
     }
@@ -309,19 +337,21 @@ class Settings {
     }
 
     getinfo_web() {
-        let outer = this;
         $.ajax({
             url: "https://app5806.acapp.acwing.com.cn/settings/getinfo/",
             type: "GET",
             data: {
-                platform: outer.platform,
+                platform: this.platform,
             },
-            success: function (resp) {
+            headers: {
+                'Authorization': "Bearer " + this.root.access,
+            },
+            success: resp => {
                 if (resp.result === "success") {
-                    outer.username = resp.username;
-                    outer.photo = resp.photo;
-                    outer.hide();
-                    outer.root.menu.show();
+                    this.username = resp.username;
+                    this.photo = resp.photo;
+                    this.hide();
+                    this.root.menu.show();
                 }
                 else {
                     outer.login();

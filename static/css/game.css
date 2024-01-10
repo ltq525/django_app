@@ -71,7 +71,7 @@
 
 .game_settings_error {
     color: red;
-    font-size: 0.8vh;
+    font-size: 1.5vh;
     display: inline; /* 压行不换行 */
     float: left; /* 左对齐 */
     padding-left: 1vw;

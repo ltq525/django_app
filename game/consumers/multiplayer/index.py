@@ -16,8 +16,13 @@ from channels.db import database_sync_to_async
 class MultiPlayer(AsyncWebsocketConsumer):
     # 创建连接 
     async def connect(self):  
-        await self.accept()
-        print('accept')
+        user = self.scope['user']
+        if user.is_authenticated:
+            await self.accept()
+            print('accept')
+        else:
+            await self.close()
+            print('close')
 
     # 断开连接 如果需要维护在线人数时 此函数不靠谱
     async def disconnect(self, close_code):
@@ -25,7 +30,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
         if self.room_name:
             await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
-
+    # 旧版的无条件匹配 
     # async def create_player(self, data):
     #     self.room_name = None 
     #     for i in range(1000):
