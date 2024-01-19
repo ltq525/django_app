@@ -8,10 +8,13 @@ class InfoView(APIView):
     permission_classes = ([IsAuthenticated])
 
     def get(self, request):
+        print(request)
         user = request.user
         player = Player.objects.get(user=user)
         return Response({
             'result': 'success',
             'username': user.username,
             'photo': player.photo,
+            'followerCount': 0,
+            'is_followed': False,
         })

@@ -5,7 +5,7 @@ from game.models.player.player import Player
 
 class RanklistView(APIView):
     # 授权验证
-    permission_classes = ([IsAuthenticated])
+    # permission_classes = ([IsAuthenticated])
 
     def get(self, request):
         print(request.user)
@@ -16,5 +16,6 @@ class RanklistView(APIView):
                 'username': player.user.username,
                 'photo': player.photo,
                 'score': player.score,
+                'id': 6,
             })
         return Response(resp)
